@@ -47,17 +47,22 @@ function module.save()
         end
     end
 
-    writefile(file,HttpService:JSONEncode(data))
+    pcall(function()
+        writefile(file,HttpService:JSONEncode(data))
+    end)
 end
 
 function module.load()
     if not isfile(file) then return end
-    local data = HttpService:JSONDecode(readfile(file))
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(readfile(file))
+    end)
+    if not success or not data then return end
 
     if getgenv().Toggles and data.Toggles then
         for k,v in pairs(data.Toggles) do
             if getgenv().Toggles[k] then
-                getgenv().Toggles[k]:SetValue(v)
+                pcall(function() getgenv().Toggles[k]:SetValue(v) end)
             end
         end
     end
@@ -65,11 +70,13 @@ function module.load()
     if getgenv().Options and data.Options then
         for k,v in pairs(data.Options) do
             if getgenv().Options[k] then
-                if type(v) == "table" and v.__type == "Color3" then
-                    getgenv().Options[k]:SetValue(Color3.new(v.r,v.g,v.b))
-                else
-                    getgenv().Options[k]:SetValue(v)
-                end
+                pcall(function()
+                    if type(v) == "table" and v.__type == "Color3" then
+                        getgenv().Options[k]:SetValue(Color3.new(v.r,v.g,v.b))
+                    else
+                        getgenv().Options[k]:SetValue(v)
+                    end
+                end)
             end
         end
     end
