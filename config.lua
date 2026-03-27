@@ -84,6 +84,62 @@ function module.load()
     module.Custom = data.Custom or {}
 end
 
+function module.save(key, value)
+    if not key then
+        module.save()
+        return
+    end
+
+    ensureFolder()
+    module.Custom[key] = value
+
+    local data = {
+        Toggles = {},
+        Options = {},
+        Custom = module.Custom
+    }
+
+    if getgenv().Toggles then
+        for k,v in pairs(getgenv().Toggles) do
+            if v and v.Value ~= nil then
+                data.Toggles[k] = v.Value
+            end
+        end
+    end
+
+    if getgenv().Options then
+        for k,v in pairs(getgenv().Options) do
+            if v and v.Value ~= nil then
+                if typeof(v.Value) == "Color3" then
+                    data.Options[k] = {__type="Color3",r=v.Value.R,g=v.Value.G,b=v.Value.B}
+                else
+                    data.Options[k] = v.Value
+                end
+            end
+        end
+    end
+
+    pcall(function()
+        writefile(file,HttpService:JSONEncode(data))
+    end)
+end
+
+function module.load(key)
+    if not key then
+        module.load()
+        return
+    end
+
+    if not isfile(file) then return nil end
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(readfile(file))
+    end)
+    if not success or not data then return nil end
+
+    module.Custom = data.Custom or {}
+    return module.Custom[key]
+end
+
 function module.init(ctx)
     local box = ctx.box
     box:AddButton("Save Config",function()
